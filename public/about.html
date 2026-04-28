@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ObserveX — About | Tech Stack & Architecture</title>
+  <meta name="description" content="Learn about the ObserveX observability engine — its architecture, tech stack, and the approach used to solve real-time server monitoring at scale." />
+  <link rel="stylesheet" href="styles/main.css" />
+  <style>
+    .about-page { padding: 80px 28px 60px; max-width: 1100px; margin: 0 auto; }
+
+    /* Hero */
+    .about-hero {
+      text-align: center; padding: 60px 20px 80px;
+    }
+    .about-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 16px; border-radius: 100px;
+      background: rgba(0, 212, 255, 0.08); border: 1px solid rgba(0, 212, 255, 0.2);
+      font-size: 0.78rem; font-weight: 600; color: var(--accent-primary);
+      text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 24px;
+    }
+    .about-hero h1 {
+      font-size: clamp(2.2rem, 5vw, 3.6rem); font-weight: 900;
+      letter-spacing: -0.04em; line-height: 1.1; margin-bottom: 20px;
+    }
+    .about-hero p {
+      max-width: 680px; margin: 0 auto 32px; color: var(--text-secondary);
+      font-size: 1.05rem; line-height: 1.8;
+    }
+
+    /* Problem Statement */
+    .section-title {
+      font-size: 1.5rem; font-weight: 800; letter-spacing: -0.03em;
+      margin-bottom: 6px;
+    }
+    .section-sub {
+      color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 28px;
+    }
+
+    .problem-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px; margin-bottom: 60px;
+    }
+    .problem-card {
+      padding: 22px 20px;
+    }
+    .problem-card .p-icon {
+      font-size: 1.8rem; margin-bottom: 12px; display: block;
+    }
+    .problem-card h3 {
+      font-size: 1rem; font-weight: 700; margin-bottom: 8px;
+    }
+    .problem-card p { color: var(--text-secondary); font-size: 0.85rem; line-height: 1.7; }
+
+    /* Architecture Pipeline */
+    .pipeline-section { margin-bottom: 60px; }
+    .pipeline {
+      display: flex; align-items: center; gap: 0; flex-wrap: wrap;
+      padding: 28px; background: var(--bg-card);
+      border: 1px solid var(--border-glass); border-radius: var(--radius-lg);
+      backdrop-filter: blur(16px); overflow-x: auto;
+    }
+    .pipe-step {
+      flex: 1; min-width: 130px; text-align: center; padding: 16px 12px;
+      position: relative;
+    }
+    .pipe-step::after {
+      content: '→'; position: absolute; right: -4px; top: 50%;
+      transform: translateY(-50%); color: var(--accent-primary); font-size: 1.2rem;
+      font-weight: 700;
+    }
+    .pipe-step:last-child::after { display: none; }
+    .pipe-icon {
+      width: 52px; height: 52px; border-radius: var(--radius-sm);
+      background: var(--grad-glow); border: 1px solid var(--border-accent);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem; margin: 0 auto 10px;
+    }
+    .pipe-step h4 { font-size: 0.82rem; font-weight: 700; color: var(--text-primary); }
+    .pipe-step p  { font-size: 0.72rem; color: var(--text-muted); margin-top: 4px; }
+
+    /* Tech Stack */
+    .tech-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 16px; margin-bottom: 60px;
+    }
+    .tech-card {
+      padding: 22px; display: flex; flex-direction: column; gap: 10px;
+    }
+    .tech-card-header {
+      display: flex; align-items: center; gap: 12px;
+    }
+    .tech-logo {
+      width: 44px; height: 44px; border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem; flex-shrink: 0;
+    }
+    .tech-card h3 { font-size: 0.95rem; font-weight: 700; }
+    .tech-card .tech-layer {
+      font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em;
+      color: var(--text-muted);
+    }
+    .tech-card p { color: var(--text-secondary); font-size: 0.82rem; line-height: 1.65; }
+    .tech-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+    .tech-tag {
+      padding: 2px 8px; border-radius: 4px;
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08);
+      font-family: var(--font-mono); font-size: 0.7rem; color: var(--text-secondary);
+    }
+
+    /* Approach Steps */
+    .approach-steps { margin-bottom: 60px; }
+    .step-list { display: flex; flex-direction: column; gap: 16px; }
+    .step-item {
+      display: flex; gap: 20px; padding: 22px; align-items: flex-start;
+    }
+    .step-number {
+      width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
+      background: var(--grad-primary);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.85rem; font-weight: 800; color: #fff;
+      box-shadow: 0 4px 12px rgba(0, 212, 255, 0.3);
+    }
+    .step-item h3 { font-size: 0.95rem; font-weight: 700; margin-bottom: 6px; }
+    .step-item p  { color: var(--text-secondary); font-size: 0.85rem; line-height: 1.7; }
+
+    /* Metrics Coverage */
+    .metrics-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 12px; margin-bottom: 60px;
+    }
+    .metric-item {
+      padding: 14px 16px; border-radius: var(--radius-md);
+      background: rgba(255,255,255,0.03); border: 1px solid var(--border-glass);
+      display: flex; align-items: center; gap: 10px;
+      transition: var(--transition-fast);
+    }
+    .metric-item:hover {
+      background: rgba(0, 212, 255, 0.05); border-color: rgba(0, 212, 255, 0.15);
+    }
+    .metric-item span:first-child { font-size: 1.1rem; }
+    .metric-item p { font-size: 0.8rem; color: var(--text-secondary); font-weight: 500; }
+
+    /* CTA */
+    .cta-section {
+      text-align: center; padding: 48px;
+      background: linear-gradient(135deg, rgba(0,212,255,0.06) 0%, rgba(108,99,255,0.06) 100%);
+      border: 1px solid var(--border-accent); border-radius: var(--radius-xl);
+    }
+    .cta-section h2 { font-size: 1.8rem; font-weight: 900; letter-spacing: -0.03em; margin-bottom: 12px; }
+    .cta-section p  { color: var(--text-secondary); margin-bottom: 28px; }
+    .cta-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+    /* Scrolled reveal */
+    .reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.6s ease, transform 0.6s ease; }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+  </style>
+</head>
+<body>
+  <div class="bg-mesh"></div>
+  <div class="bg-grid"></div>
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <a href="/index.html" class="nav-logo">
+      <div class="logo-icon">📡</div>
+      Observe<span class="accent">X</span>
+    </a>
+    <div class="nav-links">
+      <a href="/dashboard.html" class="nav-link" id="navDash">📊 <span>Dashboard</span></a>
+      <a href="/about.html"     class="nav-link active">ℹ️ <span>About</span></a>
+      <button class="btn btn-ghost" id="logoutBtn" style="padding:6px 14px;font-size:0.85rem;">Sign Out</button>
+    </div>
+  </nav>
+
+  <main class="about-page page page-with-nav">
+
+    <!-- Hero -->
+    <section class="about-hero reveal">
+      <div class="about-badge">⚡ Proof of Concept · TCS Innovation Lab</div>
+      <h1>
+        From Raw Logs to<br />
+        <span class="text-gradient">Actionable Intelligence</span>
+      </h1>
+      <p>
+        ObserveX is an end-to-end real-time observability engine that ingests Apache/Nginx-style 
+        HTTP access logs, processes them through a streaming pipeline, and renders a 
+        comprehensive visual analytics suite — giving operations teams total situational awareness.
+      </p>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+        <span class="badge badge-success"><span class="status-dot live"></span> Live Demo Running</span>
+        <span class="badge badge-purple">v1.0.0 PoC</span>
+        <span class="badge badge-info">WebSocket Streaming</span>
+      </div>
+    </section>
+
+    <!-- Problem Statement -->
+    <section class="reveal" style="margin-bottom:60px;">
+      <div class="section-title">🎯 Problem Statement</div>
+      <div class="section-sub">What operational gaps does ObserveX address?</div>
+      <div class="problem-grid">
+        <div class="glass-card problem-card">
+          <span class="p-icon">📉</span>
+          <h3>Reactive Monitoring</h3>
+          <p>Traditional log monitoring requires manual file inspection after incidents occur, causing delayed response times and prolonged MTTR.</p>
+        </div>
+        <div class="glass-card problem-card">
+          <span class="p-icon">🌊</span>
+          <h3>Log Volume Overload</h3>
+          <p>Production servers emit thousands of log lines per minute. Without real-time aggregation, critical signals drown in noise.</p>
+        </div>
+        <div class="glass-card problem-card">
+          <span class="p-icon">🔍</span>
+          <h3>Metric Blindspots</h3>
+          <p>Basic dashboards show only counts and averages, missing P95/P99 latencies, error correlations, and traffic distribution anomalies.</p>
+        </div>
+        <div class="glass-card problem-card">
+          <span class="p-icon">🏝️</span>
+          <h3>Siloed Tools</h3>
+          <p>Organizations rely on multiple disconnected tools for logs, metrics, and traces — creating operational friction and context-switching overhead.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Pipeline Architecture -->
+    <section class="pipeline-section reveal">
+      <div class="section-title">🏗️ System Architecture</div>
+      <div class="section-sub">The end-to-end data pipeline from log emission to visualization</div>
+      <div class="pipeline">
+        <div class="pipe-step">
+          <div class="pipe-icon">🖥️</div>
+          <h4>Express Server</h4>
+          <p>Generates HTTP access logs with realistic traffic patterns</p>
+        </div>
+        <div class="pipe-step">
+          <div class="pipe-icon">📂</div>
+          <h4>Log Emission</h4>
+          <p>Apache Combined Log Format written to access.log</p>
+        </div>
+        <div class="pipe-step">
+          <div class="pipe-icon">🔌</div>
+          <h4>WebSocket Stream</h4>
+          <p>Structured JSON pushed to all connected clients instantly</p>
+        </div>
+        <div class="pipe-step">
+          <div class="pipe-icon">⚙️</div>
+          <h4>Client Parser</h4>
+          <p>In-browser aggregation engine computes rolling metrics</p>
+        </div>
+        <div class="pipe-step">
+          <div class="pipe-icon">📊</div>
+          <h4>Chart.js Render</h4>
+          <p>Live charts, tables, and statistical panels refresh in real time</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tech Stack -->
+    <section class="reveal" style="margin-bottom:60px;">
+      <div class="section-title">⚙️ Technology Stack</div>
+      <div class="section-sub">Every layer of the stack — chosen for production-readiness and PoC velocity</div>
+      <div class="tech-grid">
+
+        <div class="glass-card tech-card">
+          <div class="tech-card-header">
+            <div class="tech-logo" style="background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.2);">🟢</div>
+            <div>
+              <div class="tech-layer">Runtime</div>
+              <h3>Node.js v20 LTS</h3>
+            </div>
+          </div>
+          <p>Non-blocking I/O event loop makes it ideal for high-throughput log emission and concurrent WebSocket connections without thread overhead.</p>
+          <div class="tech-tags"><span class="tech-tag">CommonJS</span><span class="tech-tag">Event Loop</span><span class="tech-tag">Streams</span></div>
+        </div>
+
+        <div class="glass-card tech-card">
+          <div class="tech-card-header">
+            <div class="tech-logo" style="background:rgba(108,99,255,0.1);border:1px solid rgba(108,99,255,0.2);">⚡</div>
+            <div>
+              <div class="tech-layer">HTTP Framework</div>
+              <h3>Express.js 4.x</h3>
+            </div>
+          </div>
+          <p>The most widely deployed Node.js framework. Serves static assets, handles REST API auth endpoints, and mounts the WebSocket upgrade server.</p>
+          <div class="tech-tags"><span class="tech-tag">REST API</span><span class="tech-tag">Middleware</span><span class="tech-tag">Static Serve</span></div>
+        </div>
+
+        <div class="glass-card tech-card">
+          <div class="tech-card-header">
+            <div class="tech-logo" style="background:rgba(0,230,118,0.1);border:1px solid rgba(0,230,118,0.2);">🔌</div>
+            <div>
+              <div class="tech-layer">Real-Time Transport</div>
+              <h3>WebSocket (ws lib)</h3>
+            </div>
+          </div>
+          <p>RFC 6455-compliant full-duplex TCP channel. Enables sub-millisecond log event delivery from server to all connected dashboard clients simultaneously.</p>
+          <div class="tech-tags"><span class="tech-tag">ws@8</span><span class="tech-tag">Broadcast</span><span class="tech-tag">JSON Events</span></div>
+        </div>
+
+        <div class="glass-card tech-card">
+          <div class="tech-card-header">
+            <div class="tech-logo" style="background:rgba(255,171,64,0.1);border:1px solid rgba(255,171,64,0.2);">📊</div>
+            <div>
+              <div class="tech-layer">Visualization</div>
+              <h3>Chart.js 4.x</h3>
+            </div>
+          </div>
+          <p>Canvas-based charting with real-time dataset streaming via <code>chart.js/auto</code>. Renders line, bar, doughnut, and radar charts with smooth animations.</p>
+          <div class="tech-tags"><span class="tech-tag">Canvas API</span><span class="tech-tag">Live Data</span><span class="tech-tag">Responsive</span></div>
+        </div>
+
+        <div class="glass-card tech-card">
+          <div class="tech-card-header">
+            <div class="tech-logo" style="background:rgba(64,196,255,0.1);border:1px solid rgba(64,196,255,0.2);">🌐</div>
+            <div>
+              <div class="tech-layer">Frontend</div>
+              <h3>Vanilla HTML5 / CSS3 / JS</h3>
+            </div>
+          </div>
+          <p>Zero-framework frontend maximizes performance and eliminates build tooling. CSS custom properties enable the full design system with zero runtime cost.</p>
+          <div class="tech-tags"><span class="tech-tag">CSS Variables</span><span class="tech-tag">Fetch API</span><span class="tech-tag">Web APIs</span></div>
+        </div>
+
+        <div class="glass-card tech-card">
+          <div class="tech-card-header">
+            <div class="tech-logo" style="background:rgba(255,82,82,0.1);border:1px solid rgba(255,82,82,0.2);">📄</div>
+            <div>
+              <div class="tech-layer">Log Format</div>
+              <h3>Apache Combined Log</h3>
+            </div>
+          </div>
+          <p>Industry-standard format used by Apache HTTP Server and Nginx. Compatible with Elastic Stack, Splunk, Datadog, and all major SIEM tools.</p>
+          <div class="tech-tags"><span class="tech-tag">NCSA Format</span><span class="tech-tag">IP</span><span class="tech-tag">Latency</span><span class="tech-tag">User-Agent</span></div>
+        </div>
+
+        <div class="glass-card tech-card">
+          <div class="tech-card-header">
+            <div class="tech-logo" style="background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.15);">🎨</div>
+            <div>
+              <div class="tech-layer">Design System</div>
+              <h3>Glassmorphism UI</h3>
+            </div>
+          </div>
+          <p>Custom dark-mode design system using <code>backdrop-filter</code>, HSL color tokens, Google Fonts Inter, and micro-animations for premium aesthetics.</p>
+          <div class="tech-tags"><span class="tech-tag">Inter Font</span><span class="tech-tag">JetBrains Mono</span><span class="tech-tag">CSS Grid</span></div>
+        </div>
+
+        <div class="glass-card tech-card">
+          <div class="tech-card-header">
+            <div class="tech-logo" style="background:rgba(108,99,255,0.1);border:1px solid rgba(108,99,255,0.2);">🔒</div>
+            <div>
+              <div class="tech-layer">Auth</div>
+              <h3>Session-Based Auth</h3>
+            </div>
+          </div>
+          <p>Lightweight credential validation with <code>sessionStorage</code> token persistence. Production extension: JWT + Redis session store with refresh tokens.</p>
+          <div class="tech-tags"><span class="tech-tag">JWT-Ready</span><span class="tech-tag">sessionStorage</span><span class="tech-tag">REST</span></div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Approach -->
+    <section class="approach-steps reveal">
+      <div class="section-title">🧠 Approach to Solving the Problem</div>
+      <div class="section-sub">A structured engineering methodology from raw signal to actionable insight</div>
+      <div class="step-list">
+        <div class="glass-card step-item">
+          <div class="step-number">1</div>
+          <div>
+            <h3>Synthetic Log Generation with Realistic Traffic Modeling</h3>
+            <p>Instead of waiting for live server traffic, the system uses a weighted-random log generator that simulates real-world endpoint popularity distributions, realistic HTTP status code ratios (55% 200s, 7% 404s, 4% 500+), latency distributions with 5% spike injection, and burst traffic events — making the PoC indistinguishable from production behavior.</p>
+          </div>
+        </div>
+        <div class="glass-card step-item">
+          <div class="step-number">2</div>
+          <div>
+            <h3>Real-Time Push via WebSocket (not polling)</h3>
+            <p>WebSocket eliminates the latency and bandwidth waste of HTTP polling. Each log event is immediately broadcast to all connected clients as structured JSON — enabling true real-time updates at under 5ms end-to-end latency on a LAN, compared to 1-30 second polling intervals in traditional monitoring tools.</p>
+          </div>
+        </div>
+        <div class="glass-card step-item">
+          <div class="step-number">3</div>
+          <div>
+            <h3>In-Browser Rolling Window Aggregation Engine</h3>
+            <p>The client maintains a circular buffer of the last 300 log entries. On each new event, it recomputes: request rate, error rate, P50/P95/P99 latency percentiles, endpoint distribution, status code buckets, top-N IPs, bytes transferred, and 2xx/4xx/5xx trend lines — all without any backend database.</p>
+          </div>
+        </div>
+        <div class="glass-card step-item">
+          <div class="step-number">4</div>
+          <div>
+            <h3>Multi-Chart Visualization with Sliding Time Windows</h3>
+            <p>Chart.js datasets are updated in place using <code>chart.update('none')</code> for zero-redraw performance. A configurable time window (60s by default) maintains a rolling view that automatically drops stale data points, creating smooth animated trends across all 6+ simultaneous charts.</p>
+          </div>
+        </div>
+        <div class="glass-card step-item">
+          <div class="step-number">5</div>
+          <div>
+            <h3>Proactive Anomaly Alerting</h3>
+            <p>Threshold-based alert rules fire toast notifications when: error rate exceeds 15%, P95 latency exceeds 1.5 seconds, request rate spikes 3× baseline, or a 5xx burst is detected. These rules mirror PagerDuty/Alertmanager configurations, demonstrating how the engine can drive on-call alerting pipelines.</p>
+          </div>
+        </div>
+        <div class="glass-card step-item">
+          <div class="step-number">6</div>
+          <div>
+            <h3>Stateless Architecture for Horizontal Scalability</h3>
+            <p>The backend holds zero log state — each client maintains its own rolling buffer. This "fan-out broadcast" model means adding 100 concurrent observers has zero marginal cost on the server. Production extension: replace the in-process generator with a Kafka consumer group for multi-node ingestion.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Metrics Coverage -->
+    <section class="reveal" style="margin-bottom:60px;">
+      <div class="section-title">📐 Metrics Monitored</div>
+      <div class="section-sub">Comprehensive server observability across all operational dimensions</div>
+      <div class="metrics-grid">
+        <div class="metric-item"><span>⚡</span><p>Requests per Second (RPS)</p></div>
+        <div class="metric-item"><span>❌</span><p>HTTP Error Rate (%)</p></div>
+        <div class="metric-item"><span>⏱️</span><p>P50 / P95 / P99 Latency</p></div>
+        <div class="metric-item"><span>📊</span><p>Status Code Distribution</p></div>
+        <div class="metric-item"><span>🛣️</span><p>Top Endpoints by Traffic</p></div>
+        <div class="metric-item"><span>🌍</span><p>Top Client IPs</p></div>
+        <div class="metric-item"><span>💾</span><p>Bytes Transferred (KB/s)</p></div>
+        <div class="metric-item"><span>🔴</span><p>5xx Server Error Count</p></div>
+        <div class="metric-item"><span>🟡</span><p>4xx Client Error Count</p></div>
+        <div class="metric-item"><span>🟢</span><p>2xx Success Rate</p></div>
+        <div class="metric-item"><span>🔄</span><p>HTTP Method Breakdown</p></div>
+        <div class="metric-item"><span>📈</span><p>Traffic Trend (60s window)</p></div>
+        <div class="metric-item"><span>🤖</span><p>User-Agent Classification</p></div>
+        <div class="metric-item"><span>⚠️</span><p>Threshold-Based Alerts</p></div>
+        <div class="metric-item"><span>📋</span><p>Live Log Feed (last 50 entries)</p></div>
+        <div class="metric-item"><span>🕐</span><p>Server Uptime</p></div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta-section reveal">
+      <h2>Ready to Explore the Dashboard?</h2>
+      <p>Real-time log data is streaming right now — open the dashboard to see it live.</p>
+      <div class="cta-btns">
+        <a href="/dashboard.html" class="btn btn-primary">📊 Open Dashboard</a>
+        <a href="https://github.com" class="btn btn-ghost" target="_blank" rel="noopener">⭐ View Source</a>
+      </div>
+    </section>
+
+  </main>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script>
+    // Auth guard
+    if (!sessionStorage.getItem('observex_token')) {
+      window.location.href = '/index.html';
+    }
+
+    // Logout
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      sessionStorage.clear(); window.location.href = '/index.html';
+    });
+
+    // Scroll reveal
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+  </script>
+</body>
+</html>

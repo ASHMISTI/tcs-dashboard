@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>ObserveX — Live Dashboard</title>
+  <meta name="description" content="Real-time server observability dashboard streaming live log metrics."/>
+  <link rel="stylesheet" href="styles/main.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+  <style>
+    .dash-layout{display:grid;grid-template-columns:220px 1fr;min-height:calc(100vh - 64px);margin-top:64px}
+    /* Sidebar */
+    .sidebar{background:rgba(7,11,20,0.9);border-right:1px solid var(--border-glass);padding:20px 12px;display:flex;flex-direction:column;gap:6px;position:sticky;top:64px;height:calc(100vh - 64px);overflow-y:auto}
+    .sidebar-section{font-size:.68rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;padding:12px 10px 4px}
+    .sidebar-link{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--radius-sm);color:var(--text-secondary);font-size:.84rem;font-weight:500;cursor:pointer;text-decoration:none;transition:var(--transition-fast)}
+    .sidebar-link:hover,.sidebar-link.active{background:rgba(0,212,255,.08);color:var(--accent-primary)}
+    .sidebar-link .sl-icon{font-size:1rem;width:20px;text-align:center}
+    .conn-status{margin-top:auto;padding:12px;border-radius:var(--radius-sm);background:rgba(255,255,255,.03);border:1px solid var(--border-glass);font-size:.78rem}
+    .conn-label{color:var(--text-muted);margin-bottom:4px}
+    .conn-val{font-weight:600;display:flex;align-items:center;gap:6px}
+    /* Main content */
+    .dash-main{padding:24px;display:flex;flex-direction:column;gap:20px;overflow-y:auto}
+    /* Top bar */
+    .dash-topbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+    .dash-title h2{font-size:1.3rem;font-weight:800;letter-spacing:-.02em}
+    .dash-title p{color:var(--text-secondary);font-size:.82rem;margin-top:2px}
+    .topbar-actions{display:flex;align-items:center;gap:10px}
+    /* KPI row */
+    .kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px}
+    /* Charts grid */
+    .charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    .charts-grid .chart-card{padding:20px}
+    .chart-card-title{font-size:.82rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+    .chart-card-title span.ct-icon{font-size:1rem}
+    /* Log table section */
+    .log-section{padding:0}
+    .log-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border-glass)}
+    .log-body{max-height:320px;overflow-y:auto}
+    .log-body table{width:100%}
+    /* Stats row */
+    .stats-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+    .stat-box{padding:18px 20px}
+    .stat-box h4{font-size:.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px}
+    .stat-list{display:flex;flex-direction:column;gap:8px}
+    .stat-row-item{display:flex;align-items:center;justify-content:space-between;font-size:.8rem}
+    .stat-bar-wrap{flex:1;margin:0 10px;height:4px;background:rgba(255,255,255,.07);border-radius:2px;overflow:hidden}
+    .stat-bar{height:100%;border-radius:2px;background:var(--grad-primary);transition:width .5s ease}
+    @media(max-width:900px){.charts-grid{grid-template-columns:1fr}.stats-row{grid-template-columns:1fr}.dash-layout{grid-template-columns:1fr}.sidebar{display:none}}
+  </style>
+</head>
+<body>
+<div class="bg-mesh"></div>
+<div class="bg-grid"></div>
+
+<!-- Navbar -->
+<nav class="navbar">
+  <a href="/index.html" class="nav-logo"><div class="logo-icon">📡</div>Observe<span class="accent">X</span></a>
+  <div class="nav-links">
+    <a href="/dashboard.html" class="nav-link active">📊 <span>Dashboard</span></a>
+    <a href="/about.html" class="nav-link">ℹ️ <span>About</span></a>
+    <div style="display:flex;align-items:center;gap:6px;padding:0 10px;font-size:.8rem;color:var(--text-secondary)">
+      <span class="status-dot live" id="navDot"></span><span id="navConnLabel">Connecting…</span>
+    </div>
+    <button class="btn btn-ghost" id="logoutBtn" style="padding:6px 14px;font-size:.85rem">Sign Out</button>
+  </div>
+</nav>
+
+<div class="dash-layout page">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-section">Navigation</div>
+    <a class="sidebar-link active" href="#overview"><span class="sl-icon">📊</span>Overview</a>
+    <a class="sidebar-link" href="#charts"><span class="sl-icon">📈</span>Charts</a>
+    <a class="sidebar-link" href="#logs"><span class="sl-icon">📋</span>Live Logs</a>
+    <a class="sidebar-link" href="#stats"><span class="sl-icon">🔬</span>Statistics</a>
+    <div class="sidebar-section">Quick Info</div>
+    <a class="sidebar-link" href="/about.html"><span class="sl-icon">ℹ️</span>About</a>
+    <div class="conn-status">
+      <div class="conn-label">WS Connection</div>
+      <div class="conn-val"><span class="status-dot live" id="sbDot"></span><span id="sbConnText">Live</span></div>
+      <div style="margin-top:6px;color:var(--text-muted);font-size:.72rem">Logs received: <span id="sbLogCount">0</span></div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="dash-main">
+    <!-- Top bar -->
+    <div class="dash-topbar" id="overview">
+      <div class="dash-title">
+        <h2>🖥️ Server Observability Dashboard</h2>
+        <p id="serverName">TCS-Observability Demo Express Server · Connecting…</p>
+      </div>
+      <div class="topbar-actions">
+        <span class="badge badge-success"><span class="status-dot live"></span> Live Stream</span>
+        <button class="btn btn-ghost" id="pauseBtn" style="padding:8px 16px;font-size:.82rem">⏸ Pause</button>
+        <button class="btn btn-ghost" id="clearBtn" style="padding:8px 16px;font-size:.82rem">🗑 Clear</button>
+      </div>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="kpi-grid">
+      <div class="glass-card metric-card">
+        <div class="metric-icon">⚡</div>
+        <div class="metric-value" id="kpiRps">0.0</div>
+        <div class="metric-label">Requests / sec</div>
+        <div class="metric-delta text-muted" id="kpiRpsDelta">—</div>
+        <div class="metric-bg">⚡</div>
+      </div>
+      <div class="glass-card metric-card">
+        <div class="metric-icon">❌</div>
+        <div class="metric-value" id="kpiErr" style="background:var(--grad-danger);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">0.0%</div>
+        <div class="metric-label">Error Rate</div>
+        <div class="metric-delta text-muted" id="kpiErrDelta">—</div>
+        <div class="metric-bg">🔴</div>
+      </div>
+      <div class="glass-card metric-card">
+        <div class="metric-icon">⏱️</div>
+        <div class="metric-value" id="kpiP95">0ms</div>
+        <div class="metric-label">P95 Latency</div>
+        <div class="metric-delta text-muted" id="kpiP50">P50: —</div>
+        <div class="metric-bg">⏱️</div>
+      </div>
+      <div class="glass-card metric-card">
+        <div class="metric-icon">📦</div>
+        <div class="metric-value" id="kpiTotal">0</div>
+        <div class="metric-label">Total Requests</div>
+        <div class="metric-delta text-muted" id="kpiBytes">0 KB</div>
+        <div class="metric-bg">📦</div>
+      </div>
+      <div class="glass-card metric-card">
+        <div class="metric-icon">🟢</div>
+        <div class="metric-value" id="kpi2xx" style="background:var(--grad-success);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">0</div>
+        <div class="metric-label">2xx Success</div>
+        <div class="metric-delta text-muted" id="kpi2xxPct">—</div>
+        <div class="metric-bg">✅</div>
+      </div>
+      <div class="glass-card metric-card">
+        <div class="metric-icon">🔴</div>
+        <div class="metric-value" id="kpi5xx" style="background:var(--grad-danger);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">0</div>
+        <div class="metric-label">5xx Errors</div>
+        <div class="metric-delta text-muted" id="kpiP99">P99: —</div>
+        <div class="metric-bg">💥</div>
+      </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="charts-grid" id="charts">
+      <div class="glass-card chart-card">
+        <div class="chart-card-title"><span class="ct-icon">📈</span>Request Rate (60s window)</div>
+        <div class="chart-container" style="height:200px"><canvas id="chartRps"></canvas></div>
+      </div>
+      <div class="glass-card chart-card">
+        <div class="chart-card-title"><span class="ct-icon">⏱️</span>Latency Percentiles (ms)</div>
+        <div class="chart-container" style="height:200px"><canvas id="chartLatency"></canvas></div>
+      </div>
+      <div class="glass-card chart-card">
+        <div class="chart-card-title"><span class="ct-icon">📊</span>Status Code Distribution</div>
+        <div class="chart-container" style="height:200px"><canvas id="chartStatus"></canvas></div>
+      </div>
+      <div class="glass-card chart-card">
+        <div class="chart-card-title"><span class="ct-icon">🛣️</span>Top Endpoints</div>
+        <div class="chart-container" style="height:200px"><canvas id="chartEndpoints"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Live Log Feed -->
+    <div class="glass-card log-section" id="logs">
+      <div class="log-header">
+        <div style="font-size:.85rem;font-weight:700">📋 Live Log Feed</div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="badge badge-info" id="logCountBadge">0 entries</span>
+          <span class="badge badge-success"><span class="status-dot live"></span>Streaming</span>
+        </div>
+      </div>
+      <div class="log-body">
+        <table class="log-table">
+          <thead>
+            <tr>
+              <th>Time</th><th>Method</th><th>Endpoint</th>
+              <th>Status</th><th>Latency</th><th>Size</th><th>IP</th>
+            </tr>
+          </thead>
+          <tbody id="logTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Statistics -->
+    <div class="stats-row" id="stats">
+      <div class="glass-card stat-box">
+        <h4>🌍 Top Client IPs</h4>
+        <div class="stat-list" id="statIPs"></div>
+      </div>
+      <div class="glass-card stat-box">
+        <h4>🔄 HTTP Methods</h4>
+        <div class="stat-list" id="statMethods"></div>
+      </div>
+      <div class="glass-card stat-box">
+        <h4>📐 Latency Distribution</h4>
+        <div class="stat-list" id="statLatency"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+// ── Auth guard ──────────────────────────────────────────────────
+if (!sessionStorage.getItem('observex_token')) window.location.href = '/index.html';
+document.getElementById('logoutBtn').addEventListener('click', () => { sessionStorage.clear(); window.location.href = '/index.html'; });
+
+// ── State ───────────────────────────────────────────────────────
+const MAX_LOGS = 300, MAX_CHART_PTS = 60;
+const logs = [], rpsHistory = [], latHistory = [];
+let totalReq = 0, totalBytes = 0, paused = false, logCount = 0;
+let prevRps = 0, prevErr = 0;
+let wsReconnectTimer = null;
+
+// ── Toast ───────────────────────────────────────────────────────
+function toast(msg, type='info') {
+  const icons={info:'ℹ️',success:'✅',error:'❌',warning:'⚠️'};
+  const tc=document.getElementById('toastContainer');
+  const t=document.createElement('div'); t.className='toast';
+  t.innerHTML=`<span>${icons[type]}</span><span>${msg}</span>`;
+  tc.appendChild(t);
+  setTimeout(()=>{t.classList.add('removing');setTimeout(()=>t.remove(),300);},3500);
+}
+
+// ── Chart helpers ───────────────────────────────────────────────
+const chartDefaults = {
+  responsive:true, maintainAspectRatio:false, animation:{duration:0},
+  plugins:{legend:{labels:{color:'#8899bb',font:{size:11,family:'Inter'}},position:'bottom'},tooltip:{backgroundColor:'#0d1520',borderColor:'rgba(255,255,255,.1)',borderWidth:1,titleColor:'#e8f0fe',bodyColor:'#8899bb'}},
+  scales:{x:{ticks:{color:'#4a5a7a',font:{size:10}},grid:{color:'rgba(255,255,255,.04)'}},y:{ticks:{color:'#4a5a7a',font:{size:10}},grid:{color:'rgba(255,255,255,.04)'}}}
+};
+
+function mkLineChart(id, datasets) {
+  return new Chart(document.getElementById(id).getContext('2d'), {
+    type:'line',
+    data:{labels:[],datasets},
+    options:{...chartDefaults, elements:{line:{tension:.4},point:{radius:0}}}
+  });
+}
+
+const cRps = mkLineChart('chartRps', [
+  {label:'RPS',data:[],borderColor:'#00d4ff',backgroundColor:'rgba(0,212,255,.08)',fill:true,borderWidth:2}
+]);
+const cLat = mkLineChart('chartLatency', [
+  {label:'P50',data:[],borderColor:'#00e676',backgroundColor:'transparent',borderWidth:2},
+  {label:'P95',data:[],borderColor:'#ffab40',backgroundColor:'transparent',borderWidth:2},
+  {label:'P99',data:[],borderColor:'#ff5252',backgroundColor:'transparent',borderWidth:2}
+]);
+const cStatus = new Chart(document.getElementById('chartStatus').getContext('2d'), {
+  type:'doughnut',
+  data:{labels:['2xx','3xx','4xx','5xx'],datasets:[{data:[0,0,0,0],backgroundColor:['#00e676','#40c4ff','#ffab40','#ff5252'],borderWidth:0}]},
+  options:{...chartDefaults, cutout:'68%', scales:{}}
+});
+const cEndpoints = new Chart(document.getElementById('chartEndpoints').getContext('2d'), {
+  type:'bar',
+  data:{labels:[],datasets:[{label:'Hits',data:[],backgroundColor:'rgba(108,99,255,.7)',borderRadius:4}]},
+  options:{...chartDefaults, indexAxis:'y', plugins:{legend:{display:false}}}
+});
+
+// ── Percentile calc ─────────────────────────────────────────────
+function percentile(arr, p) {
+  if (!arr.length) return 0;
+  const s=[...arr].sort((a,b)=>a-b), i=Math.floor(p/100*(s.length-1));
+  return s[i];
+}
+
+// ── Aggregation ─────────────────────────────────────────────────
+function aggregate() {
+  if (!logs.length) return;
+  const now=Date.now(), window60=logs.filter(l=>now-new Date(l.timestamp)<60000);
+  const rps=+(window60.length/60).toFixed(2);
+  const errors=window60.filter(l=>l.status>=400).length;
+  const errRate=window60.length?+((errors/window60.length)*100).toFixed(1):0;
+  const lats=window60.map(l=>l.latency);
+  const p50=percentile(lats,50), p95=percentile(lats,95), p99=percentile(lats,99);
+
+  // KPIs
+  document.getElementById('kpiRps').textContent=rps.toFixed(1);
+  document.getElementById('kpiErr').textContent=errRate+'%';
+  document.getElementById('kpiP95').textContent=p95+'ms';
+  document.getElementById('kpiP50').textContent='P50: '+p50+'ms';
+  document.getElementById('kpiTotal').textContent=totalReq.toLocaleString();
+  document.getElementById('kpiBytes').textContent=(totalBytes/1024).toFixed(1)+' KB';
+  const c2xx=window60.filter(l=>l.status<300).length;
+  const c5xx=window60.filter(l=>l.status>=500).length;
+  document.getElementById('kpi2xx').textContent=c2xx;
+  document.getElementById('kpi2xxPct').textContent=window60.length?((c2xx/window60.length)*100).toFixed(1)+'% success':'—';
+  document.getElementById('kpi5xx').textContent=c5xx;
+  document.getElementById('kpiP99').textContent='P99: '+p99+'ms';
+
+  // Alerts
+  if (errRate>15 && prevErr<=15) toast('⚠️ Error rate exceeded 15%! Currently '+errRate+'%','error');
+  if (p95>1500) toast('🐢 P95 latency high: '+p95+'ms','warning');
+  if (rps>prevRps*3 && prevRps>0) toast('📈 Traffic spike: '+rps+' RPS','warning');
+  prevRps=rps; prevErr=errRate;
+
+  // RPS chart
+  const ts=new Date().toLocaleTimeString('en',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  rpsHistory.push({t:ts,rps});
+  if (rpsHistory.length>MAX_CHART_PTS) rpsHistory.shift();
+  cRps.data.labels=rpsHistory.map(r=>r.t);
+  cRps.data.datasets[0].data=rpsHistory.map(r=>r.rps);
+  cRps.update('none');
+
+  // Latency chart
+  latHistory.push({t:ts,p50,p95,p99});
+  if (latHistory.length>MAX_CHART_PTS) latHistory.shift();
+  cLat.data.labels=latHistory.map(r=>r.t);
+  cLat.data.datasets[0].data=latHistory.map(r=>r.p50);
+  cLat.data.datasets[1].data=latHistory.map(r=>r.p95);
+  cLat.data.datasets[2].data=latHistory.map(r=>r.p99);
+  cLat.update('none');
+
+  // Status donut
+  const c3xx=window60.filter(l=>l.status>=300&&l.status<400).length;
+  const c4xx=window60.filter(l=>l.status>=400&&l.status<500).length;
+  cStatus.data.datasets[0].data=[c2xx,c3xx,c4xx,c5xx];
+  cStatus.update('none');
+
+  // Endpoints bar
+  const epMap={};
+  window60.forEach(l=>{epMap[l.path]=(epMap[l.path]||0)+1;});
+  const sorted=Object.entries(epMap).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  cEndpoints.data.labels=sorted.map(e=>e[0]);
+  cEndpoints.data.datasets[0].data=sorted.map(e=>e[1]);
+  cEndpoints.update('none');
+
+  // Stats panels
+  renderStatList('statIPs', countTop(window60, l=>l.ip, 5), window60.length);
+  renderStatList('statMethods', countTop(window60, l=>l.method, 5), window60.length);
+  renderStatList('statLatency',
+    [['<100ms',window60.filter(l=>l.latency<100).length],['100-500ms',window60.filter(l=>l.latency>=100&&l.latency<500).length],['500ms-1s',window60.filter(l=>l.latency>=500&&l.latency<1000).length],['>1s',window60.filter(l=>l.latency>=1000).length]],
+    window60.length
+  );
+}
+
+function countTop(arr, keyFn, n) {
+  const m={};
+  arr.forEach(l=>{const k=keyFn(l);m[k]=(m[k]||0)+1;});
+  return Object.entries(m).sort((a,b)=>b[1]-a[1]).slice(0,n);
+}
+
+function renderStatList(id, items, total) {
+  const el=document.getElementById(id);
+  el.innerHTML=items.map(([k,v])=>{
+    const pct=total?Math.round(v/total*100):0;
+    return `<div class="stat-row-item">
+      <span style="color:var(--text-primary);font-size:.78rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:90px">${k}</span>
+      <div class="stat-bar-wrap"><div class="stat-bar" style="width:${pct}%"></div></div>
+      <span style="color:var(--text-muted);font-size:.72rem;min-width:30px;text-align:right">${pct}%</span>
+    </div>`;
+  }).join('');
+}
+
+// ── Status badge ────────────────────────────────────────────────
+function statusBadge(code) {
+  if (code<300) return `<span class="badge badge-success">${code}</span>`;
+  if (code<400) return `<span class="badge badge-info">${code}</span>`;
+  if (code<500) return `<span class="badge badge-warning">${code}</span>`;
+  return `<span class="badge badge-danger">${code}</span>`;
+}
+
+function addLogRow(entry) {
+  const tbody=document.getElementById('logTableBody');
+  const tr=document.createElement('tr'); tr.className='new-row';
+  const t=new Date(entry.timestamp).toLocaleTimeString('en',{hour12:false});
+  const mColor=entry.method==='GET'?'#40c4ff':entry.method==='POST'?'#6c63ff':entry.method==='PUT'?'#ffab40':'#ff5252';
+  tr.innerHTML=`
+    <td style="color:var(--text-muted)">${t}</td>
+    <td><span style="color:${mColor};font-weight:700">${entry.method}</span></td>
+    <td style="color:var(--text-primary);max-width:180px;overflow:hidden;text-overflow:ellipsis">${entry.path}</td>
+    <td>${statusBadge(entry.status)}</td>
+    <td style="color:${entry.latency>1000?'var(--accent-danger)':entry.latency>500?'var(--accent-warning)':'var(--accent-success)'}">${entry.latency}ms</td>
+    <td style="color:var(--text-muted)">${(entry.bytes/1024).toFixed(1)}KB</td>
+    <td style="color:var(--text-muted);font-size:.72rem">${entry.ip}</td>`;
+  tbody.insertBefore(tr, tbody.firstChild);
+  while (tbody.rows.length>50) tbody.deleteRow(tbody.rows.length-1);
+  logCount++;
+  document.getElementById('logCountBadge').textContent=logCount+' entries';
+  document.getElementById('sbLogCount').textContent=totalReq;
+}
+
+// ── WebSocket ───────────────────────────────────────────────────
+function connectWS() {
+  const ws = new WebSocket(`ws://${location.host}`);
+  ws.onopen = () => {
+    document.getElementById('navConnLabel').textContent='Live';
+    document.getElementById('sbConnText').textContent='Connected';
+    document.getElementById('navDot').className='status-dot live';
+    clearTimeout(wsReconnectTimer);
+    toast('✅ WebSocket connected — streaming live logs','success');
+  };
+  ws.onmessage = ({data}) => {
+    if (paused) return;
+    const msg=JSON.parse(data);
+    if (msg.type==='server_info') {
+      document.getElementById('serverName').textContent=msg.data.name+' · PID '+msg.data.pid;
+    }
+    if (msg.type==='log') {
+      const entry=msg.data;
+      logs.push(entry);
+      if (logs.length>MAX_LOGS) logs.shift();
+      totalReq++; totalBytes+=entry.bytes;
+      addLogRow(entry);
+    }
+  };
+  ws.onclose = () => {
+    document.getElementById('navConnLabel').textContent='Reconnecting…';
+    document.getElementById('sbConnText').textContent='Disconnected';
+    wsReconnectTimer=setTimeout(connectWS, 3000);
+  };
+  ws.onerror = ()=>ws.close();
+}
+
+// ── Controls ────────────────────────────────────────────────────
+document.getElementById('pauseBtn').addEventListener('click', function(){
+  paused=!paused;
+  this.textContent=paused?'▶ Resume':'⏸ Pause';
+  this.style.borderColor=paused?'var(--accent-warning)':'';
+  toast(paused?'⏸ Stream paused':'▶ Stream resumed', paused?'warning':'success');
+});
+document.getElementById('clearBtn').addEventListener('click', ()=>{
+  logs.length=0; rpsHistory.length=0; latHistory.length=0;
+  totalReq=0; totalBytes=0; logCount=0;
+  document.getElementById('logTableBody').innerHTML='';
+  document.getElementById('logCountBadge').textContent='0 entries';
+  ['kpiRps','kpiErr','kpiP95','kpiTotal','kpiBytes','kpi2xx','kpi5xx'].forEach(id=>{
+    document.getElementById(id).textContent=id.includes('Err')?'0.0%':id.includes('ms')?'0ms':'0';
+  });
+  toast('🗑 Dashboard cleared','info');
+});
+
+// ── Aggregation loop ────────────────────────────────────────────
+setInterval(aggregate, 1000);
+
+// ── Start ───────────────────────────────────────────────────────
+connectWS();
+</script>
+</body>
+</html>
