@@ -386,7 +386,8 @@ function addLogRow(entry) {
 
 // ── WebSocket ───────────────────────────────────────────────────
 function connectWS() {
-  const ws = new WebSocket(`ws://${location.host}`);
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const ws = new WebSocket(`${proto}//${location.host}`);
   ws.onopen = () => {
     document.getElementById('navConnLabel').textContent='Live';
     document.getElementById('sbConnText').textContent='Connected';
